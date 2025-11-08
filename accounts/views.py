@@ -48,6 +48,7 @@ def register(request):
         # Создаем пользователя с хешированным паролем
         user = User.objects.create(login=login)
         user.set_password(generated_password)
+        user.save()  # Добавьте эту строку!
         
         # Создаем токен авторизации
         token = AuthToken.objects.create(user=user)
@@ -55,14 +56,19 @@ def register(request):
         # Фиксируем попытку регистрации
         RegistrationAttempt.objects.create(ip_address=ip_address)
         
+        # Исправьте сериализацию пользователя
+        user_data = UserSerializer(user).data
+        
         return Response({
             "message": "Регистрация успешна",
-            "user": UserSerializer(user).data,
+            "user": user_data,
             "token": token.token,
             "generated_password": generated_password
         }, status=status.HTTP_201_CREATED)
     
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 
 @api_view(['POST'])
 def check_login(request):
