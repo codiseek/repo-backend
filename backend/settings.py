@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,12 +21,18 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-@_ldd8(1jnbl$isd=6p^shye@+g0zk$5*%4w=j+xth=m!j!trk'
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-@_ldd8(1jnbl$isd=6p^shye@+g0zk$5*%4w=j+xth=m!j!trk')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'True').lower() == 'true'
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', 'repo-backend-kckq.onrender.com']
+ALLOWED_HOSTS = [
+    'localhost', 
+    '127.0.0.1', 
+    '0.0.0.0', 
+    'repo-backend-kckq.onrender.com',
+    'repo-frontend-kshv.onrender.com'  # Добавьте фронтенд хост
+]
 
 
 # Application definition
@@ -38,16 +45,15 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'corsheaders',  # Добавьте это
+    'corsheaders',
     'accounts',
     'backend',
 ]
 
-
-
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',  # Должен быть первым!
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # Добавьте для статики на Render
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -56,15 +62,17 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+# CORS настройки - РАЗРЕШИТЕ ВАШ ФРОНТЕНД!
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
-    "http://127.0.0.1:3000",
+    "http://127.0.0.1:3000", 
     "http://0.0.0.0:3000",
-    "https://repo-backend-kckq.onrender.com",
+    "https://repo-frontend-kshv.onrender.com",  # ВАШ ФРОНТЕНД!
 ]
 
+# Или раскомментируйте для разрешения всех доменов (временно для тестирования)
+CORS_ALLOW_ALL_ORIGINS = True
 
-# CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 
 CORS_ALLOW_METHODS = [
@@ -75,7 +83,6 @@ CORS_ALLOW_METHODS = [
     'POST',
     'PUT',
 ]
-
 
 CORS_ALLOW_HEADERS = [
     'accept',
@@ -89,7 +96,13 @@ CORS_ALLOW_HEADERS = [
     'x-requested-with',
 ]
 
-
+# CSRF trusted origins
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "https://repo-frontend-kshv.onrender.com",
+    "https://repo-backend-kckq.onrender.com",
+]
 
 ROOT_URLCONF = 'backend.urls'
 
@@ -157,8 +170,13 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Настройки для Render.com
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
